@@ -8,11 +8,11 @@ data <- read_tsv("../data/interface_data.tsv")
 #* @apiDescription API interface for the data presented in HapScoreDB
 
 #* @param genes:[character] Ensembl gene ID of genes of interest
-#* @param snps:[character] rsid of variants of interest 
+#* @param variants:[character] rsid of variants of interest 
 #* @param format:[character] Either 'csv' or 'json'
 #* @get /api/data
 
-function(res, genes = NULL, snps = NULL, format = "json"){
+function(res, genes = NULL, variants = NULL, format = "json"){
         
         df <- data
         
@@ -22,11 +22,11 @@ function(res, genes = NULL, snps = NULL, format = "json"){
                 gene_list <- unlist(strsplit(genes, ","))
                 df <- df %>% dplyr::filter(gene_id %in% gene_list)
         }
-        if (!is.null(snps)) {
+        if (!is.null(variants)) {
                 # Handle comma-separated values
-                snp_list <- unlist(strsplit(snps, ","))
-                snp_pattern <- paste(snp_list, collapse = "|")
-                df <- df %>% dplyr::filter(grepl(snp_pattern, rsid))
+                variants_list <- unlist(strsplit(variants, ","))
+                variants_pattern <- paste(variants_list, collapse = "|")
+                df <- df %>% dplyr::filter(grepl(variants_pattern, rsid))
         }
         
         # Return JSON (default)

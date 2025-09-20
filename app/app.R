@@ -17,13 +17,20 @@ interface_data_path <- "../data/interface_data.tsv"
 rsid_map_path <- "../data/rsid_map.tsv"
 coords_map_path <- "../data/coords_map.tsv"
 sequences_path <- "../data/all_sequences.tsv"
+version_df_path <- "../data/version.csv"
+api_df_path <- "../data/api.csv"
+link_map_path<- "../data/link_map.rds"
+
 # LOAD DATA ----
 data <- read_tsv(interface_data_path)
 rsid_map <- read_tsv(rsid_map_path)
 rsid_map <- rsid_map %>% column_to_rownames("rsid") %>% mutate(haplo_ids = strsplit(haplo_ids, ","))
 coords_map <- read_tsv(coords_map_path)
 coords_map <- coords_map %>% column_to_rownames("variant_coord") %>% mutate(haplo_ids = strsplit(haplo_ids, ","))
-
+version <- read_csv(version_df_path)
+api <- read_csv(api_df_path)
+link_map <- readRDS(link_map_path)
+link_map <- link_map %>% column_to_rownames('rsid')
 # Footer definition ----
 app_footer <- tags$footer(
     class = "text-center text-white",
@@ -165,7 +172,7 @@ ui <- tagList(
                     #### datatable ----
                     card(
                         card_header("Haplotypes table"),
-                        dataTableOutput("datatable"),
+                        DTOutput("datatable"),
                         full_screen = TRUE
                     ),
                     
@@ -582,6 +589,50 @@ ui <- tagList(
                     )
                 )
             ),
+            ## Access ----
+            nav_panel(
+                    title = "Access",
+                    fluidRow(
+                            column(
+                                    width = 6,
+                                    offset = 3,
+                                    accordion(
+                                            id = "ACCESS",
+                                            accordion_panel(
+                                                    title = "Version",
+                                                    tableOutput("version")
+                                            ),
+                                            accordion_panel(
+                                                    title = "License",
+                                                    "All data and download files in HapScoreDB are freely available under a 'Creative Commons BY 4.0'
+                                                    license. When using the data, please provide appropriate credit — and inform users of any
+                                                    changes or additions that you might have made to the data.",
+                                                    tags$br(),
+                                                    tags$img(
+                                                            src = "https://licensebuttons.net/l/by/4.0/88x31.png",
+                                                            alt = "Creative Commons BY 4.0",
+                                                            style = "margin-top:10px;"
+                                                    )
+                                            ),
+                                            accordion_panel(
+                                                    title = "API",
+                                                    "HapScoreDB data are also available through rest API at the endpoint:",
+                                                    tags$br(),
+                                                    tags$br(),
+                                                    h3("https://bcglab.cibio.unitn.it/hapscoredbAPI/data"),
+                                                    tags$br(),
+                                                    "with the following parameters:",
+                                                    tags$br(),
+                                                    tags$br(),
+                                                    tableOutput("api"),
+                                                    tags$br(),
+                                                    "Example: ", tags$code("curl \"https://bcglab.cibio.unitn.it/hapscoredbAPI/data?genes=ENSG00000164002,ENSG00000065978\"")
+                                            ),
+                                            open = FALSE
+                                    )
+                            )
+                    )
+            ),
             ## Contacts ----
             nav_item(
                 tags$a(
@@ -675,6 +726,16 @@ server <- function(input, output, session){
                 )
         }
         
+        # Create variants SNPs to clinvar
+        df$rsid <- lapply(df$rsid, function(x){
+                if (x=="wt") {
+                        return("wt")
+                }else{
+                        link <- link_map[x,1][[1]]
+                        return(ifelse(!is.null(link), link, sprintf('<a href="https://www.ncbi.nlm.nih.gov/snp/%s" target="_blank">%s</a>', x, x)))
+                }
+        })
+        
         return(df)
     })
     
@@ -696,8 +757,9 @@ server <- function(input, output, session){
     })
     
     ### Search datatable ---- 
-    output$datatable <- renderDataTable({
-        df()
+    output$datatable <- DT::renderDT({
+        df <- df()
+        DT::datatable(df, escape=FALSE, options = list(pageLength = 5))
     })
     
     ### Update distribution filters, both for scores and deltas----
@@ -1035,6 +1097,10 @@ server <- function(input, output, session){
         p1 + p2
     })
     
+    ## Access ----
+    
+    output$version <- renderTable(version)
+    output$api <- renderTable(api)
     ## Download ----
     
     ### Subset download datatable ----
