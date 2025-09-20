@@ -65,7 +65,7 @@ ui <- tagList(
                             }")
                        )
         ),
-        title = "HapScoreDB",
+        title = tagList("HapScoreDB", tags$sub("v1.0")),
         theme = bs_theme(bootswatch = "journal"),
         # Prevent the theme from changing title to uppercase
         tags$head(
@@ -458,7 +458,11 @@ ui <- tagList(
                                         "proSST PLL" = "prosst_PLL",
                                         "proSST PLLR_mf" = "prosst_PLLR_mf",
                                         "proSST PLLR_wt" = "prosst_PLLR_wt",
-                                        "proSST delta PLL" = "prosst_PLL_delta"
+                                        "proSST delta PLL" = "prosst_PLL_delta",
+                                        "AlphaMissense classes" = "am_classes",
+                                        "AlphaMissense scores" = "am_scores",
+                                        "AlphaMissense average score" = "am_avg_score",
+                                        "AlphaMissense sum score" = "am_sum_score"
                                     ),
                                     selected = "esm_PLL"
                                 )
