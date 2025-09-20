@@ -736,7 +736,17 @@ server <- function(input, output, session){
                 }
         })
         
+        # Create links to uniprot
+        df$uniprot_id <- lapply(df$uniprot_id, function(x){
+                if (is.na(x)) {
+                        return(x)
+                }else{
+                        return(sprintf('<a href="https://www.uniprot.org/uniprotkb/%s" target="_blank">%s</a>', x, x))
+                }
+        })
+        
         return(df)
+        
     })
     
     ### Update value boxes ----
