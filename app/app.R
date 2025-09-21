@@ -732,15 +732,18 @@ server <- function(input, output, session){
                 )
         }
         
-        # Create variants SNPs to clinvar
-        df$rsid <- lapply(df$rsid, function(x){
-                if (x=="wt") {
-                        return("wt")
-                }else{
-                        link <- link_map[x,1][[1]]
-                        return(ifelse(!is.null(link), link, sprintf('<a href="https://www.ncbi.nlm.nih.gov/snp/%s" target="_blank">%s</a>', x, x)))
-                }
-        })
+            # Create variants SNPs to clinvar
+            df$rsid <- lapply(df$rsid, function(x){
+                    links <- c()
+                    for (link in strsplit(x, ",")[[1]]) {
+                            if (link=="wt") {
+                                    links <- c(links, "wt")
+                            }else{
+                                    links <- c(links, link_map[link,1][[1]])
+                            }
+                    }
+                    return(paste(links, collapse = ""))
+            })
         
         # Create links to uniprot
         df$uniprot_id <- lapply(df$uniprot_id, function(x){

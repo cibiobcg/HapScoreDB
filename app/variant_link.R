@@ -24,11 +24,11 @@ gwas_cat <- gwas_cat %>% filter(SNPS %in% variants$rsid)
 # Create variants links to clinvar
 variants$link <- lapply(variants$rsid, function(rsid){
         if (rsid %in% clinvar$rsid) {
-                return(sprintf('<a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=%s" target="_blank">%s</a>', rsid, rsid))
+                return(sprintf('<a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=%s" target="_blank">%s</a>(ClinVar)', rsid, rsid))
         }else if (rsid %in% gwas_cat$SNPS) {
-                return(sprintf('<a href="https://www.ebi.ac.uk/gwas/variants/%s" target="_blank">%s</a>', rsid, rsid))
+                return(sprintf('<a href="https://www.ebi.ac.uk/gwas/variants/%s" target="_blank">%s</a>(GWAS Catalog)', rsid, rsid))
         }else{
-                return(sprintf('<a href="https://www.ncbi.nlm.nih.gov/snp/%s" target="_blank">%s</a>', rsid, rsid))
+                return(sprintf('<a href="https://www.ncbi.nlm.nih.gov/snp/%s" target="_blank">%s</a>(dbSNP)', rsid, rsid))
         }
 })
 
