@@ -185,16 +185,18 @@ ui <- tagList(
                                     selectizeInput(
                                         inputId = "model",
                                         label = "Select the desired model:",
-                                        choices = list("ESM2"=list("PLL" = "esm_PLL",
-                                                                   "PLLR_mf" = "esm_PLLR_mf",
-                                                                   "PLLR_wt" = "esm_PLLR_wt"),
-                                                       "PoET"=list("PLL" = "poet_PLL",
-                                                                   "PLLR_mf" = "poet_PLLR_mf",
-                                                                   "PLLR_wt" = "poet_PLLR_wt"),
-                                                       "proSST"=list("PLL" = "prosst_PLL",
-                                                                     "PLLR_mf" = "prosst_PLLR_mf",
-                                                                     "PLLR_wt" = "prosst_PLLR_wt")
+                                        choices = list("ESM2"="esm",
+                                                       "PoET"="poet",
+                                                       "proSST"="prosst"
                                                        )
+                                    ),
+                                    selectizeInput(
+                                            inputId = "score_type",
+                                            label = "Select the desired score type:",
+                                            choices = list("PLL" = "_PLL",
+                                                           "PLLR_wt"="_PLLR_wt",
+                                                           "PLLR_mf"="_PLLR_mf"
+                                            )
                                     ),
                                     selectizeInput(
                                         inputId = "score_distribution_filter",
@@ -829,10 +831,10 @@ server <- function(input, output, session){
             if (input$tsl_end_NF) {
                 data_plot <- data_plot %>% filter(!grepl("end_NF",tx_notes))
             }
-            if (str_detect(input$model, "PLLR")) {
-                p <- data_plot %>% filter(!input$model==0) %>% ggplot() +
+            if (str_detect(paste0(input$model, input$score_type), "PLLR")) {
+                p <- data_plot %>% filter(!paste0(input$model, input$score_type)==0) %>% ggplot() +
                                                             geom_density(
-                                                                aes(x = !!sym(input$model)),
+                                                                aes(x = !!sym(paste0(input$model, input$score_type))),
                                                                 fill = "#e6ab47",
                                                                 color = "#e39107",
                                                                 alpha = 0.8,
@@ -840,14 +842,14 @@ server <- function(input, output, session){
                                                                 stat = "count") +
                                                             geom_vline(
                                                                 data = plot_df, 
-                                                                aes(xintercept = !!sym(input$model),
+                                                                aes(xintercept = !!sym(paste0(input$model, input$score_type)),
                                                                     text = paste0(haplotype_id,
                                                                                   " on transcript ",
                                                                                   transcript_id,
                                                                                   "\n",
                                                                                   input$model,
                                                                                   ": ",
-                                                                                  round(!!sym(input$model),4)
+                                                                                  round(!!sym(paste0(input$model, input$score_type)),4)
                                                                                   )
                                                                     ),
                                                                 color = "#e34907") +
@@ -861,21 +863,21 @@ server <- function(input, output, session){
             }else{
                 p <- data_plot %>% ggplot() +
                                 geom_density(
-                                    aes(x = !!sym(input$model)),
+                                    aes(x = !!sym(paste0(input$model, input$score_type))),
                                     fill = "#e6ab47",
                                     color = "#e39107",
                                     alpha = 0.8,
                                     adjust = 0.1) +
                                 geom_vline(
                                     data = plot_df, 
-                                    aes(xintercept = !!sym(input$model),
+                                    aes(xintercept = !!sym(paste0(input$model, input$score_type)),
                                         text = paste0(haplotype_id,
                                                       " on transcript ",
                                                       transcript_id,
                                                       "\n",
                                                       input$model,
                                                       ": ",
-                                                      round(!!sym(input$model),4)
+                                                      round(!!sym(paste0(input$model, input$score_type)),4)
                                         )
                                     ),
                                     color = "#e34907") +
@@ -884,8 +886,8 @@ server <- function(input, output, session){
             }
             ggplotly(p, tooltip = "text")
         }else{
-            if (str_detect(input$model, "PLLR")) {
-                p <- data_plot %>% filter(!input$model==0) %>% ggplot(aes(x = !!sym(input$model))) +
+            if (str_detect(paste0(input$model, input$score_type), "PLLR")) {
+                p <- data_plot %>% filter(!paste0(input$model, input$score_type)==0) %>% ggplot(aes(x = !!sym(paste0(input$model, input$score_type)))) +
                                                             geom_density(fill = "#e6ab47",
                                                                          color = "#e39107",
                                                                          alpha = 0.8,
@@ -899,7 +901,7 @@ server <- function(input, output, session){
                                                                                                 )
                                                                           )
             }else{
-                p <- data_plot %>% ggplot(aes(x = !!sym(input$model))) +
+                p <- data_plot %>% ggplot(aes(x = !!sym(paste0(input$model, input$score_type)))) +
                                 geom_density(fill = "#e6ab47",
                                              color = "#e39107",
                                              alpha = 0.8,
