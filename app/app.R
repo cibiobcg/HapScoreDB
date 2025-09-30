@@ -19,6 +19,7 @@ coords_map_path <- "../data/coords_map.tsv"
 sequences_path <- "../data/all_sequences.tsv"
 version_df_path <- "../data/version.csv"
 api_df_path <- "../data/api.csv"
+column_description_path <- "../data/columns_description.tsv"
 link_map_path<- "../data/link_map.rds"
 
 # LOAD DATA ----
@@ -29,8 +30,11 @@ coords_map <- read_tsv(coords_map_path)
 coords_map <- coords_map %>% column_to_rownames("variant_coord") %>% mutate(haplo_ids = strsplit(haplo_ids, ","))
 version <- read_csv(version_df_path)
 api <- read_csv(api_df_path)
+columns_description <- read_tsv(column_description_path, col_names = FALSE)
+colnames(columns_description) <- c("Column", "Description")
 link_map <- readRDS(link_map_path)
 link_map <- link_map %>% column_to_rownames('rsid')
+
 # Footer definition ----
 app_footer <- tags$footer(
     class = "text-center text-white",
@@ -461,7 +465,6 @@ ui <- tagList(
                                         "proSST PLLR_mf" = "prosst_PLLR_mf",
                                         "proSST PLLR_wt" = "prosst_PLLR_wt",
                                         "proSST delta PLL" = "prosst_PLL_delta",
-                                        "AlphaMissense classes" = "am_classes",
                                         "AlphaMissense scores" = "am_scores",
                                         "AlphaMissense average score" = "am_avg_score",
                                         "AlphaMissense sum score" = "am_sum_score"
@@ -589,6 +592,10 @@ ui <- tagList(
                                 title = "Which variants were taken into consideration?",
                                 "To generate the database of mutated sequences all (SNPs and INDELs)
                                 phased common (MAF > 0.5%) coding variants identified in 1000 Genomes were taken into consideration."
+                            ),
+                            accordion_panel(
+                                    title = "Columns description",
+                                    tableOutput("columns_description")
                             ),
                             open = FALSE
                         )
@@ -760,14 +767,14 @@ server <- function(input, output, session){
     
     ### Update value boxes ----
     output$selected_haplotypes <- renderText({
-        nrow(df() %>% select(haplotype_id) %>% unique())
+        nrow(df() %>% dplyr::select(haplotype_id) %>% unique())
     })
     output$affected_transcripts <- renderText({
-        nrow(df() %>% select(transcript_id) %>% unique())
+        nrow(df() %>% dplyr::select(transcript_id) %>% unique())
     })
         
     output$involved_variants <- renderText({
-        subset <- df() %>% select(variant_coordinates_hg38) %>% filter(!variant_coordinates_hg38 == "wt")
+        subset <- df() %>% dplyr::select(variant_coordinates_hg38) %>% filter(!variant_coordinates_hg38 == "wt")
         variants <- c()
         for(row in subset$variant_coordinates_hg38){
             variants <- c(variants, str_split_1(row, pattern = ","))
@@ -994,7 +1001,7 @@ server <- function(input, output, session){
         if (input$group_by == "ancestry") {
             # Group by ancestry
             p <- plot_df %>%
-                    select(frequency, haplotype_id, AFR_freq, AMR_freq, EAS_freq, EUR_freq, SAS_freq) %>%
+                    dplyr::select(frequency, haplotype_id, AFR_freq, AMR_freq, EAS_freq, EUR_freq, SAS_freq) %>%
                     dplyr::rename("Global" = "frequency") %>%
                     pivot_longer(cols = c("Global", "AFR_freq", "AMR_freq", "EAS_freq", "EUR_freq", "SAS_freq"),
                                  names_to = "ancestry",
@@ -1009,7 +1016,7 @@ server <- function(input, output, session){
         }else{
             # Group by haplotype
             p <- plot_df %>%
-                    select(haplotype_id, AFR_freq, AMR_freq, EAS_freq, EUR_freq, SAS_freq) %>%
+                    dplyr::select(haplotype_id, AFR_freq, AMR_freq, EAS_freq, EUR_freq, SAS_freq) %>%
                     pivot_longer(cols = c("AFR_freq", "AMR_freq", "EAS_freq", "EUR_freq", "SAS_freq"),
                                  names_to = "ancestry",
                                  values_to = "freq") %>% 
@@ -1052,13 +1059,13 @@ server <- function(input, output, session){
     
     ### Update value boxes ----
     output$analyzed_genes <- renderText({
-        nrow(data %>% select(gene_id) %>% unique())
+        nrow(data %>% dplyr::select(gene_id) %>% unique())
     })
     output$analyzed_haplotypes <- renderText({
-        nrow(data %>% select(haplotype_id) %>% unique())
+        nrow(data %>% dplyr::select(haplotype_id) %>% unique())
     })
     output$analyzed_transcripts <- renderText({
-        nrow(data %>% select(transcript_id) %>% unique())
+        nrow(data %>% dplyr::select(transcript_id) %>% unique())
     })
     # Read from stats file
     output$analyzed_variants <- renderText({
@@ -1068,7 +1075,7 @@ server <- function(input, output, session){
     ### haplotypes per gene distribution ----
     output$haplotype_gene_distribution <- renderPlotly({
         plot_df <- data %>%
-                        select(haplotype_id, gene_id) %>%
+                        dplyr::select(haplotype_id, gene_id) %>%
                         unique() %>%
                         summarise(haplotype_count = n(), .by = gene_id)
         p <- plot_df %>% ggplot(aes(x = haplotype_count)) +
@@ -1116,6 +1123,10 @@ server <- function(input, output, session){
         p1 + p2
     })
     
+    ## FAQ ----
+    
+    output$columns_description <- renderTable(columns_description)
+    
     ## Access ----
     
     output$version <- renderTable(version)
@@ -1125,23 +1136,23 @@ server <- function(input, output, session){
     ### Subset download datatable ----
     preview_df <- reactive({
         if (length(input$IDs_selector)>0) {
-            preview_df <- data %>% select(input$IDs_selector)
+            preview_df <- data %>% dplyr::select(input$IDs_selector)
         }
         if (length(input$variant_info_selector)>0) {
-            preview_df <- cbind(preview_df, data %>% select(input$variant_info_selector))
+            preview_df <- cbind(preview_df, data %>% dplyr::select(input$variant_info_selector))
         }
         if (length(input$frequency_selector)>0) {
-            preview_df <- cbind(preview_df, data %>% select(input$frequency_selector))
+            preview_df <- cbind(preview_df, data %>% dplyr::select(input$frequency_selector))
         }
         if (length(input$transcript_info_selector)>0) {
-            preview_df <- cbind(preview_df, data %>% select(input$transcript_info_selector))
+            preview_df <- cbind(preview_df, data %>% dplyr::select(input$transcript_info_selector))
         }
         if (length(input$sequence_selector)>0) {
-            sequences_df <- read_tsv(sequences_path) %>% select(gene_id, transcript_id, haplotype_id, input$sequence_selector)
+            sequences_df <- read_tsv(sequences_path) %>% dplyr::select(gene_id, transcript_id, haplotype_id, input$sequence_selector)
             preview_df <- preview_df %>% left_join(sequences_df)
         }
         if (length(input$scores_selector)>0) {
-            preview_df <- cbind(preview_df, data %>% select(input$scores_selector))
+            preview_df <- cbind(preview_df, data %>% dplyr::select(input$scores_selector))
         }
         
         return(preview_df)
